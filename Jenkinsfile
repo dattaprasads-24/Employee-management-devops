@@ -1,29 +1,36 @@
 pipeline {
     agent any
 
-    tools {
-        nodejs 'nodeJS-26'
-    }
-
     stages {
-        stage('Checkout') {
+
+        stage('Build Docker Image') {
             steps {
-                echo 'Source code downloaded from GitHub'
+                sh '''
+                    docker build -t employee-backend:v1 ./backend
+                '''
             }
         }
 
-        stage('Build Information') {
+        stage('Push to Docker Hub') {
             steps {
-                sh 'pwd'
-                sh 'ls -la'
-                sh 'node --version'
-                sh 'npm --version'
-            }
-        }
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKERHUB_USER',
+                        passwordVariable: 'DOCKERHUB_TOKEN'
+                    )
+                ]) {
+                    sh '''
+                        docker tag employee-backend:v1 $DOCKERHUB_USER/employee-backend:jenkins-v1
 
-        stage('Build Complete') {
-            steps {
-                echo 'First Jenkins pipeline completed successfully!'
+                        echo "$DOCKERHUB_TOKEN" | docker login \
+                            -u "$DOCKERHUB_USER" --password-stdin
+
+                        docker push $DOCKERHUB_USER/employee-backend:jenkins-v1
+
+                        docker logout
+                    '''
+                }
             }
         }
     }

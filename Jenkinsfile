@@ -1,10 +1,14 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'NodeJS-26'
+    }
+
     stages {
         stage('Checkout') {
             steps {
-                echo 'Source code is available in Jenkins workspace'
+                echo 'Source code downloaded from GitHub'
             }
         }
 
